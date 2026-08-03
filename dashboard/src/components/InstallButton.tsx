@@ -3,16 +3,16 @@ import { CommandBlock } from './CommandBlock'
 
 const MCP_URL = 'https://learn-mcp.djvadya16.workers.dev/mcp'
 
-type Tab = 'mcp' | 'code'
+type Tab = 'app' | 'code'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'mcp', label: 'Claude Desktop / Mobile' },
-  { id: 'code', label: 'Claude Code' },
+  { id: 'app', label: 'Claude Desktop / Mobile / Web' },
+  { id: 'code', label: 'Claude Code / other agents' },
 ]
 
 export function InstallButton() {
   const [open, setOpen] = useState(false)
-  const [tab, setTab] = useState<Tab>('mcp')
+  const [tab, setTab] = useState<Tab>('app')
 
   useEffect(() => {
     if (!open) return
@@ -29,7 +29,7 @@ export function InstallButton() {
         onClick={() => setOpen(true)}
         className="text-sm font-medium px-3 py-1.5 rounded-md border border-border2 text-muted hover:text-white hover:border-accent transition-colors"
       >
-        Install
+        Connect
       </button>
 
       {open && (
@@ -42,7 +42,7 @@ export function InstallButton() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-start">
-              <h2 className="text-white font-bold text-xl tracking-tight">Install Learn</h2>
+              <h2 className="text-white font-bold text-xl tracking-tight">Connect Learn</h2>
               <button
                 onClick={() => setOpen(false)}
                 className="text-dim hover:text-white text-2xl leading-none transition-colors"
@@ -54,8 +54,11 @@ export function InstallButton() {
 
             <p className="text-muted text-sm leading-relaxed">
               This site is just a dashboard to monitor your progress. The learning itself happens
-              inside <span className="text-white font-medium">Claude</span> — connect it below and
-              study with the <span className="text-accent font-mono">/learn</span> command.
+              inside your AI agent. Learn is a standard remote{' '}
+              <span className="text-white font-medium">MCP connector</span> — add it to any
+              MCP-capable agent, then start a session by saying{' '}
+              <span className="text-accent">"start my learn session"</span> (or running the{' '}
+              <span className="text-accent font-mono">learn</span> prompt).
             </p>
 
             <nav role="tablist" className="flex border-b border-border -mb-1">
@@ -77,7 +80,7 @@ export function InstallButton() {
               ))}
             </nav>
 
-            {tab === 'mcp' && (
+            {tab === 'app' && (
               <div role="tabpanel" className="flex flex-col gap-3">
                 <h3 className="text-white font-semibold text-base tracking-tight">
                   Add as a custom connector
@@ -89,8 +92,10 @@ export function InstallButton() {
                 </ol>
                 <CommandBlock command={MCP_URL} prefix="" />
                 <p className="text-faint text-xs">
-                  Requires a paid Claude plan (Pro/Max/Team). Some Enterprise orgs restrict custom
-                  connectors — ask your admin if the option is missing.
+                  On mobile you can't add connectors in the app — add it once at{' '}
+                  <span className="text-dim">claude.ai</span> in a browser and it appears in the
+                  mobile app. Requires a paid Claude plan (Pro/Max/Team); some Enterprise orgs
+                  restrict custom connectors — ask your admin if the option is missing.
                 </p>
               </div>
             )}
@@ -98,16 +103,21 @@ export function InstallButton() {
             {tab === 'code' && (
               <div role="tabpanel" className="flex flex-col gap-3">
                 <h3 className="text-white font-semibold text-base tracking-tight">
-                  Install as a Claude Code plugin
+                  Connect from Claude Code or any MCP client
                 </h3>
                 <div className="flex flex-col gap-2">
-                  <p className="text-dim text-xs">Run these in your terminal:</p>
-                  <CommandBlock command="claude plugin marketplace add github:Kisilov-Vadim/learn-claude-plugin" />
-                  <CommandBlock command="claude plugin install learn@learn-marketplace" />
+                  <p className="text-dim text-xs">Claude Code — run in your terminal:</p>
+                  <CommandBlock command="claude mcp add --transport http learn https://learn-mcp.djvadya16.workers.dev/mcp" />
                 </div>
+                <p className="text-muted text-sm leading-relaxed">
+                  Any other MCP-capable agent: add a <span className="text-white">remote / HTTP</span>{' '}
+                  MCP server pointing at the endpoint below. It uses OAuth — a browser login opens on
+                  first connect.
+                </p>
+                <CommandBlock command={MCP_URL} prefix="" />
                 <p className="text-faint text-xs">
-                  Restart Claude Code, then run <span className="text-dim font-mono">/learn</span>.
-                  First run opens a one-time browser login.
+                  Then run <span className="text-dim">/mcp</span> to authenticate, and say{' '}
+                  <span className="text-dim">"start my learn session"</span>.
                 </p>
               </div>
             )}
