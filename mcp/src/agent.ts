@@ -66,7 +66,7 @@ export class LearnMcp extends McpAgent<Env, unknown, Props> {
         content: [
           {
             type: "text" as const,
-            text: "Your learning dashboard: https://kisilov-vadim.github.io/learn-dashboard/",
+            text: "Your learning dashboard: https://kisilov-vadim.github.io/learn/",
           },
         ],
       }),

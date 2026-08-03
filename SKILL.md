@@ -31,9 +31,9 @@ When the user asks to open/see their dashboard (e.g. "/learn-dashboard", "open m
 dashboard", "show my progress page"), give them this clickable link — you cannot
 open a browser yourself, so hand it over for them to tap:
 
-**https://kisilov-vadim.github.io/learn-dashboard/**
+**https://kisilov-vadim.github.io/learn/**
 
-(In Claude Code only, you may instead run `open "https://kisilov-vadim.github.io/learn-dashboard/"`.)
+(In Claude Code only, you may instead run `open "https://kisilov-vadim.github.io/learn/"`.)
 
 ## On Invocation
 
