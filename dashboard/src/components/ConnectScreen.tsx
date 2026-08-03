@@ -37,12 +37,9 @@ export function ConnectScreen({ session, login }: Props) {
     try {
       const redirectTo = await postMcpCallback(activeSession)
       setStatus('success')
-      try {
-        window.close()
-      } catch {
-        // best-effort no-op — most browsers won't let a script close a tab
-        // it didn't open itself; the redirect below is what actually matters.
-      }
+      // Navigating to redirectTo is what delivers the OAuth code back to the
+      // client and completes the connection — do NOT window.close() before this
+      // (a script-closable tab would abort delivery → Claude shows "didn't finish").
       window.location.href = redirectTo
     } catch (e) {
       setErr((e as Error).message)
