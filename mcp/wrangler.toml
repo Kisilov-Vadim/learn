@@ -1,0 +1,15 @@
+name = "learn-mcp"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "26e71f88aec34f2aa59b803270ec7c91"
+
+[durable_objects]
+bindings = [{ name = "MCP_OBJECT", class_name = "LearnMcp" }]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LearnMcp"]

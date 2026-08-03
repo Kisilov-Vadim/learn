@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+body { background: #13111c; color: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; font-size: 17px; -webkit-font-smoothing: antialiased; }
+button { cursor: pointer; border: none; background: none; color: inherit; font: inherit; }
+a { text-decoration: none; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2d2040; border-radius: 2px; }
