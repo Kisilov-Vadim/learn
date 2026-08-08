@@ -167,3 +167,29 @@ verbatim.
 4. Deploy dashboard.
 5. End-to-end: add a global rule + a subject rule in the dashboard, start a session, confirm
    the agent receives and honors both.
+
+## Appendix — current `get_subject_context` body (pre-change)
+
+`003_get_subject_context_rules.sql` is a `CREATE OR REPLACE` of this, adding one key to the
+top-level `json_build_object`:
+
+```
+'rules', COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'active', r.active) ORDER BY r.created_at ASC)
+                   FROM rules r
+                   WHERE r.subject_id = p_subject_id AND r.user_id = auth.uid() AND r.active = true), '[]'::json)
+```
+
+Current definition:
+
+```sql
+CREATE OR REPLACE FUNCTION public.get_subject_context(p_subject_id uuid)
+ RETURNS json
+ LANGUAGE sql
+ STABLE
+AS $function$ SELECT json_build_object('id', s.id, 'name', s.name, 'streak', s.streak, 'currentLevel', s.current_level, 'methodEffectiveness', COALESCE((SELECT json_object_agg(me.method, json_build_object('avgScoreDelta', me.avg_score_delta, 'touches', me.touches, 'retired', me.retired)) FROM method_effectiveness me WHERE me.subject_id = p_subject_id AND me.user_id = auth.uid()), '{}'::json), 'dueTopics', COALESCE((SELECT json_agg(json_build_object('id', t.id, 'name', t.name, 'score', t.score, 'level', t.level, 'desiredScore', t.desired_score) ORDER BY t.score ASC) FROM topics t WHERE t.subject_id = p_subject_id AND t.next_review <= CURRENT_DATE AND t.status != 'completed' AND t.user_id = auth.uid()), '[]'::json), 'nextUnstarted', (SELECT json_build_object('id', t.id, 'name', t.name, 'score', t.score, 'level', t.level, 'desiredScore', t.desired_score) FROM topics t WHERE t.subject_id = p_subject_id AND t.status = 'not-started' AND t.level = s.current_level AND t.user_id = auth.uid() ORDER BY t.order_index ASC LIMIT 1), 'practiceCandidate', (SELECT json_build_object('id', t.id, 'name', t.name, 'score', t.score, 'level', t.level, 'desiredScore', t.desired_score) FROM topics t WHERE t.subject_id = p_subject_id AND t.score < t.desired_score AND t.status NOT IN (  'not-started', 'completed') AND (t.last_reviewed < CURRENT_DATE OR t.last_reviewed IS NULL) AND t.user_id = auth.uid() ORDER BY t.score ASC LIMIT 1), 'deepDiveCandidate', (SELECT json_build_object('id', t.id, 'name', t.name, 'score', t.score, 'level', t.level, 'desiredScore', t.desired_score) FROM topics t WHERE t.subject_id = p_subject_id AND t.score < t.desired_score AND t.status NOT IN ('not-started', 'completed') AND t.user_id = auth.uid() ORDER BY t.score ASC LIMIT 1)) FROM subjects s WHERE s.id = p_subject_id AND s.user_id = auth.uid(); $function$
+```
+
+Key facts confirmed by this body, to reuse in the migrations:
+- Ownership column is `user_id`, matched against `auth.uid()` everywhere.
+- `subjects` PK is `s.id`; the FK target for `rules.subject_id` is `subjects(id)`.
+- Return type is `json`; keep `get_subject_context` returning `json` (use `json_agg`).
