@@ -6,6 +6,7 @@ import { SessionsView } from './views/SessionsView'
 import { MethodsView } from './views/MethodsView'
 import { TopicPanel } from './TopicPanel'
 import { RulesPanel } from './RulesPanel'
+import { EmptyState, ErrorState } from './StateViews'
 import type { Subject } from '../types'
 
 type Tab = 'topics' | 'sessions' | 'methods' | 'rules'
@@ -30,9 +31,9 @@ export function SubjectShell({ subjects, onLogout }: Props) {
 
   // The Rules tab needs none of this data — skip those fetches while it's active.
   const dataSubjectId = tab === 'rules' ? null : (subjectId ?? null)
-  const { topics, loading: topicsLoading } = useTopics(dataSubjectId)
-  const { touches, loading: touchesLoading } = useTouches(dataSubjectId)
-  const { context } = useSubjectContext(dataSubjectId)
+  const { topics, loading: topicsLoading, error: topicsError, reload: reloadTopics } = useTopics(dataSubjectId)
+  const { touches, loading: touchesLoading, error: touchesError, reload: reloadTouches } = useTouches(dataSubjectId)
+  const { context, error: contextError, reload: reloadContext } = useSubjectContext(dataSubjectId)
 
   // Unknown subject in the URL (e.g. stale link) → back to subject cards
   if (!activeSubject) return <Navigate to="/" replace />
@@ -42,6 +43,7 @@ export function SubjectShell({ subjects, onLogout }: Props) {
   const activeTab = tab as Tab
   const openTopic = (id: string) => navigate(`/s/${subjectId}/${activeTab}/topic/${id}`)
   const closeTopic = () => navigate(`/s/${subjectId}/${activeTab}`)
+  const loading = topicsLoading || touchesLoading
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -50,12 +52,13 @@ export function SubjectShell({ subjects, onLogout }: Props) {
         activeId={activeSubject.id}
         onSubjectChange={id => navigate(`/s/${id}/topics`)}
         onHome={() => navigate('/')}
+        onRules={() => navigate('/rules')}
         onLogout={onLogout}
         streak={context?.streak ?? activeSubject.streak ?? 0}
       />
 
       {/* Tabs */}
-      <nav className="flex border-b border-border px-12">
+      <nav className="flex border-b border-border px-6 md:px-12">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -72,29 +75,34 @@ export function SubjectShell({ subjects, onLogout }: Props) {
       </nav>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-12 pt-5 pb-10 min-h-0">
-        {(topicsLoading || touchesLoading) && activeTab !== 'rules' ? (
+      <main className="flex-1 overflow-y-auto px-6 md:px-12 pt-5 pb-10 min-h-0">
+        {loading && activeTab !== 'rules' ? (
           <div className="flex items-center justify-center h-32 text-dim">Loading…</div>
         ) : (
           <>
             {activeTab === 'topics' && (
-              <TopicsView topics={topics} onOpenTopic={openTopic} />
+              topicsError
+                ? <ErrorState message={topicsError} onRetry={reloadTopics} />
+                : topics.length === 0
+                  ? <EmptyState icon="🗂" title="No topics here" message="This subject has no topics yet." />
+                  : <TopicsView topics={topics} onOpenTopic={openTopic} />
             )}
             {activeTab === 'sessions' && (
-              <SessionsView
-                touches={touches}
-                topics={topics}
-                streak={context?.streak ?? 0}
-                onOpenTopic={openTopic}
-              />
+              touchesError
+                ? <ErrorState message={touchesError} onRetry={reloadTouches} />
+                : touches.length === 0
+                  ? <EmptyState icon="🕒" title="No sessions yet" message="Your review history will show up here." />
+                  : <SessionsView touches={touches} topics={topics} streak={context?.streak ?? 0} onOpenTopic={openTopic} />
             )}
             {activeTab === 'methods' && (
-              <MethodsView context={context} subjectName={activeSubject.name} />
+              contextError
+                ? <ErrorState message={contextError} onRetry={reloadContext} />
+                : !context || Object.keys(context.methodEffectiveness ?? {}).length === 0
+                  ? <EmptyState icon="📊" title="No method data yet" message="Method stats appear after a few sessions." />
+                  : <MethodsView context={context} subjectName={activeSubject.name} />
             )}
             {activeTab === 'rules' && (
-              <div className="max-w-3xl">
-                <RulesPanel subjectId={activeSubject.id} title={`Rules for ${activeSubject.name.replace(/-/g, ' ')}`} />
-              </div>
+              <RulesPanel subjectId={activeSubject.id} title={`Rules for ${activeSubject.name.replace(/-/g, ' ')}`} />
             )}
           </>
         )}
