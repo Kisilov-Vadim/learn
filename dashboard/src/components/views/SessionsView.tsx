@@ -40,6 +40,12 @@ export function SessionsView({ touches, topics, streak, onOpenTopic }: Props) {
     return map
   }, [topics])
 
+  const topicLevels = useMemo(() => {
+    const map = new Map<string, Topic['level']>()
+    for (const t of topics) map.set(t.id, t.level)
+    return map
+  }, [topics])
+
   const sessionGroups = useMemo(() => {
     const map = new Map<string, Touch[]>()
     for (const t of touches) {
@@ -86,6 +92,7 @@ export function SessionsView({ touches, topics, streak, onOpenTopic }: Props) {
         date={selectedDate}
         touches={touches}
         topicNames={topicNames}
+        topicLevels={topicLevels}
         onClose={() => setSelectedDate(null)}
         onOpenTopic={onOpenTopic}
       />

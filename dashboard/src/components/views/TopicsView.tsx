@@ -1,17 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { scoreBorderColor, scoreGradient, formatDate, today } from '../../lib/utils'
+import { scoreBorderColor, scoreGradient, formatDate, today, LEVEL_TAG } from '../../lib/utils'
 import type { Topic, Level } from '../../types'
 
 const LEVELS: Level[] = ['beginner', 'junior', 'middle', 'senior', 'principal']
-
-const LEVEL_TAG: Record<Level, string> = {
-  beginner:  'bg-[#1e293b] text-[#94a3b8]',
-  junior:    'bg-[#1e3a2f] text-[#4ade80]',
-  middle:    'bg-[#1c2d4a] text-[#60a5fa]',
-  senior:    'bg-[#3b1f4e] text-[#c4b5fd]',
-  principal: 'bg-[#431407] text-[#fb923c]',
-}
 
 interface Props {
   topics: Topic[]

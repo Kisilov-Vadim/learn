@@ -1,16 +1,17 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { formatDate, formatDateTime, formatMethod } from '../lib/utils'
-import type { Touch } from '../types'
+import { formatDate, formatDateTime, formatMethod, LEVEL_TAG } from '../lib/utils'
+import type { Touch, Level } from '../types'
 
 interface Props {
   date: string | null
   touches: Touch[]
   topicNames: Map<string, string>
+  topicLevels: Map<string, Level>
   onClose: () => void
   onOpenTopic: (id: string) => void
 }
 
-export function SessionPanel({ date, touches, topicNames, onClose, onOpenTopic }: Props) {
+export function SessionPanel({ date, touches, topicNames, topicLevels, onClose, onOpenTopic }: Props) {
   const sessionTouches = date
     ? touches.filter(t => t.createdAt.slice(0, 10) === date).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : []
@@ -55,13 +56,19 @@ export function SessionPanel({ date, touches, topicNames, onClose, onOpenTopic }
                 const borderColor = delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : '#475569'
                 const effectivenessColor = touch.effectiveness === 'high' ? '#10b981' : touch.effectiveness === 'medium' ? '#eab308' : '#ef4444'
                 const topicName = topicNames.get(touch.topicId) ?? touch.topicId
+                const level = topicLevels.get(touch.topicId)
 
                 return (
                   <div key={i} className="bg-bg rounded-xl overflow-hidden mb-2.5" style={{ borderLeft: `3px solid ${borderColor}` }}>
                     <div className="px-3.5 py-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base font-semibold text-white">{topicName}</span>
-                        <span className="text-sm font-bold" style={{ color: borderColor }}>{deltaStr}</span>
+                      <div className="flex justify-between items-center gap-2">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="text-base font-semibold text-white truncate">{topicName}</span>
+                          {level && (
+                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_TAG[level]}`}>{level}</span>
+                          )}
+                        </span>
+                        <span className="text-sm font-bold shrink-0" style={{ color: borderColor }}>{deltaStr}</span>
                       </div>
                       <div className="flex gap-2 items-center mt-1">
                         <span className="bg-border text-[#c4b5fd] text-[13px] px-1.5 py-0.5 rounded">{formatMethod(touch.method)}</span>

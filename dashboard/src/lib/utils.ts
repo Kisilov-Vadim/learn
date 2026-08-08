@@ -1,8 +1,18 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import type { Level } from '../types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// Level → badge classes, shared by the topics list and session touch cards.
+export const LEVEL_TAG: Record<Level, string> = {
+  beginner:  'bg-[#1e293b] text-[#94a3b8]',
+  junior:    'bg-[#1e3a2f] text-[#4ade80]',
+  middle:    'bg-[#1c2d4a] text-[#60a5fa]',
+  senior:    'bg-[#3b1f4e] text-[#c4b5fd]',
+  principal: 'bg-[#431407] text-[#fb923c]',
 }
 
 const SCORE_BORDERS = ['#374151', '#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981']
