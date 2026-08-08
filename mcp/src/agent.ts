@@ -4,7 +4,7 @@ import { z } from "zod";
 import { RPC_FUNCTIONS, RpcFunction } from "./config";
 import { callRpc } from "./rpc";
 import { getValidJwt } from "./session";
-import { SKILL_TEXT, SERVER_INSTRUCTIONS } from "./skill";
+import { SKILL_TEXT, SERVER_INSTRUCTIONS, buildGuideText, GlobalRule } from "./skill";
 import { buildToolHandlers, ToolDeps } from "./mcp";
 
 type Props = { grant: string };
@@ -46,9 +46,21 @@ export class LearnMcp extends McpAgent<Env, unknown, Props> {
           "starting or continuing a session, and follow it exactly.",
         inputSchema: {},
       },
-      async () => ({
-        content: [{ type: "text" as const, text: SKILL_TEXT }],
-      }),
+      async () => {
+        let globalRules: GlobalRule[] = [];
+        try {
+          const data = (await handlers["manage_rules"]({
+            p_action: "list",
+            p_scope: "global",
+          })) as { global?: GlobalRule[] };
+          globalRules = data?.global ?? [];
+        } catch {
+          // If rules can't be loaded, still return the guide — the session must not break.
+        }
+        return {
+          content: [{ type: "text" as const, text: buildGuideText(SKILL_TEXT, globalRules) }],
+        };
+      },
     );
 
     // Opening the dashboard: the Worker can't open a browser on the user's device,
