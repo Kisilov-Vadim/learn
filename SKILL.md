@@ -333,6 +333,36 @@ Cascades automatically — topics, sessions, touches, method_effectiveness all d
 
 ---
 
+## Custom Rules
+
+The user can define custom rules that steer how you run sessions. They live in two scopes:
+
+- **Global rules** — apply to every subject. They are appended to the `get_guide` response
+  under "## Your Personal Rules (global)". Honor them for the entire session.
+- **Per-subject rules** — apply only to the selected subject. They arrive in the
+  `get_subject_context` response as a `rules` array (each `{ id, label, text }`). Honor them
+  whenever you are working that subject.
+
+Each rule has a short `label` (title) and an optional `text` (description/instruction).
+Only active rules are ever delivered; treat every delivered rule as a standing user
+instruction that overrides your default behavior where they conflict (user instructions win).
+
+**Managing rules with `manage_rules`** (one tool, four actions via `p_action`):
+- `list` — `p_action:"list"` with no scope returns everything grouped:
+  `{ global:[...], subjects:{ "<subjectId>":[...] } }`. Use this to answer
+  "which rules do I have?". `p_scope:"global"` returns only global rules;
+  `p_subject_id:"<id>"` returns only that subject's rules ("which rules do I have for X?").
+- `add` — `p_action:"add"`, `p_label:"<title>"`, optional `p_text:"<description>"`, and
+  optional `p_subject_id` (omit for a global rule).
+- `update` — `p_action:"update"`, `p_rule_id:"<id>"`, and any of `p_label` / `p_text` /
+  `p_active` (set `p_active:false` to disable a rule without deleting it).
+- `delete` — `p_action:"delete"`, `p_rule_id:"<id>"`.
+
+When the user states a durable preference for how you should teach (e.g. "always give me a
+real code example", "stop letting me skip the Feynman close"), offer to save it as a rule —
+give it a short label plus the instruction as the description; global if it applies
+everywhere, subject-scoped if it's specific to the current subject.
+
 ## Key Rules
 
 1. Never ask the user what method or mode to use — decide autonomously using the decision tree and toolkit
