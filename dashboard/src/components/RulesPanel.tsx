@@ -8,6 +8,21 @@ interface Props {
   title?: string
 }
 
+// Shared pill toggle used by both the list row and the modal.
+function Switch({ active, onToggle, title }: { active: boolean; onToggle: () => void; title?: string }) {
+  return (
+    <button
+      onClick={onToggle}
+      title={title ?? (active ? 'Disable' : 'Enable')}
+      className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${active ? 'bg-accent2' : 'bg-border2'}`}
+    >
+      <span
+        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${active ? 'left-[18px]' : 'left-0.5'}`}
+      />
+    </button>
+  )
+}
+
 export function RulesPanel({ subjectId, title }: Props) {
   const { rules, loading, add, update, remove } = useRules(subjectId)
   // null = modal closed; 'new' = create mode; a Rule = edit mode
@@ -43,15 +58,7 @@ export function RulesPanel({ subjectId, title }: Props) {
               key={r.id}
               className={`bg-bg rounded-lg px-3.5 py-2.5 flex items-center gap-3 ${r.active ? '' : 'opacity-50'}`}
             >
-              <button
-                onClick={() => update(r.id, { active: !r.active })}
-                title={r.active ? 'Disable' : 'Enable'}
-                className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${r.active ? 'bg-accent2' : 'bg-border2'}`}
-              >
-                <span
-                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${r.active ? 'left-[18px]' : 'left-0.5'}`}
-                />
-              </button>
+              <Switch active={r.active} onToggle={() => update(r.id, { active: !r.active })} />
               <button
                 onClick={() => setEditing(r)}
                 className="flex-1 text-left text-[14px] font-medium text-white hover:text-accent transition-colors truncate"
@@ -68,8 +75,7 @@ export function RulesPanel({ subjectId, title }: Props) {
           rule={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
           onCreate={async (label, text, active) => { await add(label, text, active); setEditing(null) }}
-          onSave={async (id, label, text) => { await update(id, { label, text }); setEditing(null) }}
-          onToggle={(id, active) => update(id, { active })}
+          onSave={async (id, label, text, active) => { await update(id, { label, text, active }); setEditing(null) }}
           onDelete={async (id) => { await remove(id); setEditing(null) }}
         />
       )}
@@ -82,14 +88,12 @@ function RuleModal({
   onClose,
   onCreate,
   onSave,
-  onToggle,
   onDelete,
 }: {
   rule: Rule | null // null = create mode
   onClose: () => void
   onCreate: (label: string, text: string, active: boolean) => Promise<void>
-  onSave: (id: string, label: string, text: string) => Promise<void>
-  onToggle: (id: string, active: boolean) => void
+  onSave: (id: string, label: string, text: string, active: boolean) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }) {
   const isNew = rule === null
@@ -107,20 +111,14 @@ function RuleModal({
 
   const canSave = label.trim().length > 0
 
-  // The switch toggles active. For an existing rule it persists immediately (a quick toggle,
-  // mirroring the list-row switch); for a new rule it sets the initial state saved on create.
-  function toggleActive() {
-    const next = !active
-    setActive(next)
-    if (!isNew) onToggle(rule!.id, next)
-  }
-
+  // The switch edits form state only; nothing persists until Save, so Cancel/Escape
+  // discards a toggle just like it discards label/description edits.
   async function save() {
     if (busy || !canSave) return
     setBusy(true)
     try {
       if (isNew) await onCreate(label.trim(), text, active)
-      else await onSave(rule!.id, label.trim(), text)
+      else await onSave(rule!.id, label.trim(), text, active)
     } finally {
       setBusy(false)
     }
@@ -162,15 +160,7 @@ function RuleModal({
         />
 
         <div className="flex items-center gap-2.5 mt-4">
-          <button
-            onClick={toggleActive}
-            title={active ? 'Disable' : 'Enable'}
-            className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${active ? 'bg-accent2' : 'bg-border2'}`}
-          >
-            <span
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${active ? 'left-[18px]' : 'left-0.5'}`}
-            />
-          </button>
+          <Switch active={active} onToggle={() => setActive(a => !a)} />
           <span className="text-sm text-muted">{active ? 'Active' : 'Disabled'}</span>
         </div>
 

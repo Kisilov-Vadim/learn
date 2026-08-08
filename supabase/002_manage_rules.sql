@@ -2,7 +2,7 @@
 
 -- Formats one rules row as the camelCase JSON the API/dashboard expect.
 CREATE OR REPLACE FUNCTION public._rule_json(r public.rules)
-RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$
+RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT jsonb_build_object(
     'id',        r.id,
     'subjectId', r.subject_id,
@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION public.manage_rules(
   p_active     boolean DEFAULT NULL
 ) RETURNS jsonb
 LANGUAGE plpgsql
+SET search_path = public
 AS $$
 DECLARE
   v_uid uuid := auth.uid();

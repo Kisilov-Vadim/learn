@@ -27,7 +27,7 @@ CREATE POLICY rules_delete ON public.rules FOR DELETE USING (user_id = auth.uid(
 
 -- Keep updated_at fresh on every UPDATE.
 CREATE OR REPLACE FUNCTION public.set_updated_at()
-RETURNS trigger LANGUAGE plpgsql AS $$
+RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;

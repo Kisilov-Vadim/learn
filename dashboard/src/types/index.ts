@@ -71,6 +71,7 @@ export interface SubjectContext {
   nextUnstarted: Topic | null
   deepDiveCandidate: Topic | null
   methodEffectiveness: Record<string, MethodStat>
+  rules: { id: string; label: string; text: string }[]
 }
 
 export interface Rule {

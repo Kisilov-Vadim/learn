@@ -28,9 +28,11 @@ export function SubjectShell({ subjects, onLogout }: Props) {
 
   const activeSubject = subjects.find(s => s.id === subjectId) ?? null
 
-  const { topics, loading: topicsLoading } = useTopics(subjectId ?? null)
-  const { touches, loading: touchesLoading } = useTouches(subjectId ?? null)
-  const { context } = useSubjectContext(subjectId ?? null)
+  // The Rules tab needs none of this data — skip those fetches while it's active.
+  const dataSubjectId = tab === 'rules' ? null : (subjectId ?? null)
+  const { topics, loading: topicsLoading } = useTopics(dataSubjectId)
+  const { touches, loading: touchesLoading } = useTouches(dataSubjectId)
+  const { context } = useSubjectContext(dataSubjectId)
 
   // Unknown subject in the URL (e.g. stale link) → back to subject cards
   if (!activeSubject) return <Navigate to="/" replace />
