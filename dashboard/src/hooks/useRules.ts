@@ -19,11 +19,12 @@ export function useRules(subjectId: string | null) {
 
   useEffect(() => { load() }, [load])
 
-  const add = useCallback(async (label: string, text: string) => {
+  const add = useCallback(async (label: string, text: string, active = true) => {
     await rpc('manage_rules', {
       p_action: 'add',
       p_label: label,
       p_text: text,
+      p_active: active,
       ...(subjectId ? { p_subject_id: subjectId } : {}),
     })
     load()

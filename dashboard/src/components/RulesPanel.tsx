@@ -67,8 +67,9 @@ export function RulesPanel({ subjectId, title }: Props) {
         <RuleModal
           rule={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
-          onCreate={async (label, text) => { await add(label, text); setEditing(null) }}
-          onSave={async (id, text) => { await update(id, { text }); setEditing(null) }}
+          onCreate={async (label, text, active) => { await add(label, text, active); setEditing(null) }}
+          onSave={async (id, label, text) => { await update(id, { label, text }); setEditing(null) }}
+          onToggle={(id, active) => update(id, { active })}
           onDelete={async (id) => { await remove(id); setEditing(null) }}
         />
       )}
@@ -81,17 +82,20 @@ function RuleModal({
   onClose,
   onCreate,
   onSave,
+  onToggle,
   onDelete,
 }: {
   rule: Rule | null // null = create mode
   onClose: () => void
-  onCreate: (label: string, text: string) => Promise<void>
-  onSave: (id: string, text: string) => Promise<void>
+  onCreate: (label: string, text: string, active: boolean) => Promise<void>
+  onSave: (id: string, label: string, text: string) => Promise<void>
+  onToggle: (id: string, active: boolean) => void
   onDelete: (id: string) => Promise<void>
 }) {
   const isNew = rule === null
   const [label, setLabel] = useState(rule?.label ?? '')
   const [text, setText] = useState(rule?.text ?? '')
+  const [active, setActive] = useState(rule?.active ?? true)
   const [busy, setBusy] = useState(false)
 
   // Close on Escape.
@@ -101,14 +105,22 @@ function RuleModal({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const canSave = isNew ? label.trim().length > 0 : true
+  const canSave = label.trim().length > 0
+
+  // The switch toggles active. For an existing rule it persists immediately (a quick toggle,
+  // mirroring the list-row switch); for a new rule it sets the initial state saved on create.
+  function toggleActive() {
+    const next = !active
+    setActive(next)
+    if (!isNew) onToggle(rule!.id, next)
+  }
 
   async function save() {
     if (busy || !canSave) return
     setBusy(true)
     try {
-      if (isNew) await onCreate(label.trim(), text)
-      else await onSave(rule!.id, text)
+      if (isNew) await onCreate(label.trim(), text, active)
+      else await onSave(rule!.id, label.trim(), text)
     } finally {
       setBusy(false)
     }
@@ -131,27 +143,36 @@ function RuleModal({
           ✕
         </button>
 
-        {isNew ? (
-          <input
-            autoFocus
-            value={label}
-            onChange={e => setLabel(e.target.value)}
-            placeholder="Rule label (e.g. “Examples”)"
-            className="w-full bg-bg border border-border2 rounded-lg text-lg font-semibold px-3.5 py-2.5 mb-4 outline-none text-white placeholder:text-faint focus:border-accent transition-colors"
-          />
-        ) : (
-          <h3 className="text-white font-semibold text-xl mb-4 pr-8">{rule!.label}</h3>
-        )}
+        <label className="block text-dim text-sm mb-1.5">Label</label>
+        <input
+          autoFocus
+          value={label}
+          onChange={e => setLabel(e.target.value)}
+          placeholder="Rule label (e.g. “Examples”)"
+          className="w-full bg-bg border border-border2 rounded-lg text-lg font-semibold px-3.5 py-2.5 mb-4 outline-none text-white placeholder:text-faint focus:border-accent transition-colors"
+        />
 
         <label className="block text-dim text-sm mb-1.5">Description</label>
         <textarea
-          autoFocus={!isNew}
           value={text}
           onChange={e => setText(e.target.value)}
           rows={5}
           placeholder="What should the assistant do? (optional)"
           className="w-full bg-bg border border-border2 rounded-lg text-[15px] px-3.5 py-2.5 outline-none text-white placeholder:text-faint focus:border-accent transition-colors resize-y"
         />
+
+        <div className="flex items-center gap-2.5 mt-4">
+          <button
+            onClick={toggleActive}
+            title={active ? 'Disable' : 'Enable'}
+            className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${active ? 'bg-accent2' : 'bg-border2'}`}
+          >
+            <span
+              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${active ? 'left-[18px]' : 'left-0.5'}`}
+            />
+          </button>
+          <span className="text-sm text-muted">{active ? 'Active' : 'Disabled'}</span>
+        </div>
 
         <div className="flex items-center gap-2 mt-5">
           {!isNew && (
