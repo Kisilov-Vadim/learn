@@ -5,6 +5,7 @@ import { Login } from './components/Login'
 import { ConnectScreen } from './components/ConnectScreen'
 import { SubjectCards } from './components/SubjectCards'
 import { SubjectShell } from './components/SubjectShell'
+import { RulesPage } from './components/RulesPage'
 import { getMcpState } from './lib/mcpCallback'
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/s/:subjectId" element={<Navigate to="topics" replace />} />
       <Route path="/s/:subjectId/:tab" element={<SubjectShell subjects={subjects} onLogout={logout} />} />
       <Route path="/s/:subjectId/:tab/topic/:topicId" element={<SubjectShell subjects={subjects} onLogout={logout} />} />
+      <Route path="/rules" element={<RulesPage subjects={subjects} onLogout={logout} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
