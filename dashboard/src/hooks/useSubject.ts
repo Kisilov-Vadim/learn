@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { rpc } from '../lib/supabase'
-import type { Topic, Touch, SubjectContext } from '../types'
+import type { Topic, Touch, SubjectContext, Session } from '../types'
 
 export function useTopics(subjectId: string | null) {
   const [topics, setTopics] = useState<Topic[]>([])
@@ -88,4 +88,22 @@ export function useTopic(topicId: string | null) {
 
   useEffect(() => { load() }, [load])
   return { topic, loading, error, reload: load }
+}
+
+export function useSessions(subjectId: string | null) {
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(() => {
+    if (!subjectId) { setSessions([]); return }
+    setLoading(true); setError(null)
+    rpc<{ sessions: Session[] }>('query_sessions', { p_subject_id: subjectId, p_limit: 1000 })
+      .then(data => setSessions(data?.sessions ?? []))
+      .catch(e => setError((e as Error).message))
+      .finally(() => setLoading(false))
+  }, [subjectId])
+
+  useEffect(() => { load() }, [load])
+  return { sessions, loading, error, reload: load }
 }

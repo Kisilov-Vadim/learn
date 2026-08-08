@@ -1,5 +1,5 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { useTopics, useTouches, useSubjectContext } from '../hooks/useSubject'
+import { useTopics, useTouches, useSubjectContext, useSessions } from '../hooks/useSubject'
 import { Header } from './Header'
 import { TopicsView } from './views/TopicsView'
 import { SessionsView } from './views/SessionsView'
@@ -34,6 +34,7 @@ export function SubjectShell({ subjects, onLogout }: Props) {
   const { topics, loading: topicsLoading, error: topicsError, reload: reloadTopics } = useTopics(dataSubjectId)
   const { touches, loading: touchesLoading, error: touchesError, reload: reloadTouches } = useTouches(dataSubjectId)
   const { context, error: contextError, reload: reloadContext } = useSubjectContext(dataSubjectId)
+  const { sessions, error: sessionsError, reload: reloadSessions } = useSessions(dataSubjectId)
 
   // Unknown subject in the URL (e.g. stale link) → back to subject cards
   if (!activeSubject) return <Navigate to="/" replace />
@@ -88,11 +89,11 @@ export function SubjectShell({ subjects, onLogout }: Props) {
                   : <TopicsView topics={topics} onOpenTopic={openTopic} />
             )}
             {activeTab === 'sessions' && (
-              touchesError
-                ? <ErrorState message={touchesError} onRetry={reloadTouches} />
+              (touchesError || sessionsError)
+                ? <ErrorState message={touchesError || sessionsError || undefined} onRetry={() => { reloadTouches(); reloadSessions() }} />
                 : touches.length === 0
                   ? <EmptyState icon="🕒" title="No sessions yet" message="Your review history will show up here." />
-                  : <SessionsView touches={touches} topics={topics} streak={context?.streak ?? 0} onOpenTopic={openTopic} />
+                  : <SessionsView sessions={sessions} touches={touches} topics={topics} streak={context?.streak ?? 0} onOpenTopic={openTopic} />
             )}
             {activeTab === 'methods' && (
               contextError

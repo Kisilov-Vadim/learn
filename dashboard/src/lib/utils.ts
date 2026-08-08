@@ -64,3 +64,21 @@ export function capitalize(s: string) {
 export function formatMethod(m: string) {
   return m.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
+
+// Sum of gaps between sorted event timestamps (epoch ms), each gap capped at capMin.
+// Idle time beyond the cap is discarded, so abandoned sessions can't inflate the total.
+export function activeMinutes(events: number[], capMin = 30): number {
+  const sorted = [...events].sort((a, b) => a - b)
+  const cap = capMin * 60000
+  let ms = 0
+  for (let i = 1; i < sorted.length; i++) ms += Math.min(sorted[i] - sorted[i - 1], cap)
+  return Math.round(ms / 60000)
+}
+
+export function formatMinutes(mins: number): string {
+  if (mins < 1) return '< 1m'
+  if (mins < 60) return `${mins}m`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}

@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { formatDate, formatDateTime, formatMethod, LEVEL_TAG } from '../lib/utils'
-import type { Touch, Level } from '../types'
+import { formatDate, formatDateTime, formatMethod, LEVEL_TAG, activeMinutes, formatMinutes } from '../lib/utils'
+import type { Touch, Level, Session } from '../types'
 
 interface Props {
-  date: string | null
+  sessionId: string | null
+  session: Session | null
   touches: Touch[]
   topicNames: Map<string, string>
   topicLevels: Map<string, Level>
@@ -11,17 +12,30 @@ interface Props {
   onOpenTopic: (id: string) => void
 }
 
-export function SessionPanel({ date, touches, topicNames, topicLevels, onClose, onOpenTopic }: Props) {
-  const sessionTouches = date
-    ? touches.filter(t => t.createdAt.slice(0, 10) === date).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+function startTimeOf(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+export function SessionPanel({ sessionId, session, touches, topicNames, topicLevels, onClose, onOpenTopic }: Props) {
+  const sessionTouches = sessionId
+    ? touches.filter(t => t.sessionId === sessionId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : []
 
   const touchCount = sessionTouches.length
   const topicCount = new Set(sessionTouches.map(t => t.topicId)).size
 
+  const durationStr = session && sessionTouches.length > 0
+    ? (() => {
+        const times = sessionTouches.map(t => new Date(t.createdAt).getTime())
+        const endAnchor = session.endedAt ? new Date(session.endedAt).getTime() : Math.max(...times)
+        return formatMinutes(activeMinutes([new Date(session.startedAt).getTime(), ...times, endAnchor]))
+      })()
+    : ''
+
   return (
     <AnimatePresence>
-      {date && (
+      {sessionId && session && (
         <>
           <motion.div
             className="fixed inset-0 z-40 bg-black/30"
@@ -37,9 +51,9 @@ export function SessionPanel({ date, touches, topicNames, topicLevels, onClose, 
             <div className="px-[18px] py-4 border-b border-border flex justify-between items-start shrink-0">
               <div>
                 <div className="text-[11px] font-semibold tracking-widest text-muted uppercase mb-1">Session</div>
-                <div className="text-xl font-bold text-white">{formatDate(date)}, {date.slice(0, 4)}</div>
+                <div className="text-xl font-bold text-white">{formatDate(session.startedAt.slice(0, 10))}, {session.startedAt.slice(0, 4)} <span className="text-dim font-normal text-sm">· {startTimeOf(session.startedAt)}</span></div>
                 <div className="text-sm text-dim mt-1">
-                  {touchCount} touch{touchCount !== 1 ? 'es' : ''} · {topicCount} topic{topicCount !== 1 ? 's' : ''}
+                  {touchCount} touch{touchCount !== 1 ? 'es' : ''} · {topicCount} topic{topicCount !== 1 ? 's' : ''}{durationStr ? ` · ${durationStr}` : ''}
                 </div>
               </div>
               <button onClick={onClose} className="text-faint hover:text-white text-2xl px-1 shrink-0 transition-colors">✕</button>
