@@ -28,6 +28,8 @@ export function RulesPanel({ subjectId, title }: Props) {
   const { rules, loading, error, add, update, remove, reload } = useRules(subjectId)
   // null = modal closed; 'new' = create mode; a Rule = edit mode
   const [editing, setEditing] = useState<Rule | 'new' | null>(null)
+  // id of the row currently showing its inline delete confirm (null = none)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   const heading = title ?? (subjectId ? 'Subject rules' : 'Global rules')
 
@@ -80,6 +82,31 @@ export function RulesPanel({ subjectId, title }: Props) {
               >
                 {r.label}
               </button>
+              {confirmingId === r.id ? (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[12px] text-muted">Delete?</span>
+                  <button
+                    onClick={() => { remove(r.id); setConfirmingId(null) }}
+                    className="text-[12px] font-medium text-red-400 hover:text-red-300 px-1.5 py-0.5"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setConfirmingId(null)}
+                    className="text-[12px] text-dim hover:text-white px-1.5 py-0.5"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingId(r.id)}
+                  title="Delete rule"
+                  className="shrink-0 text-dim hover:text-red-400 transition-colors text-sm px-1"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))}
         </div>
