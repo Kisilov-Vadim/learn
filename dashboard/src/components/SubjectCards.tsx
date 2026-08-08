@@ -1,5 +1,6 @@
 import type { Subject } from '../types'
 import { InstallButton } from './InstallButton'
+import { RulesPanel } from './RulesPanel'
 
 interface Props {
   subjects: Subject[]
@@ -52,6 +53,10 @@ export function SubjectCards({ subjects, onSelect, onLogout }: Props) {
             </div>
           </button>
         ))}
+      </div>
+
+      <div className="mt-8 max-w-3xl">
+        <RulesPanel subjectId={null} />
       </div>
     </div>
   )

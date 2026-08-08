@@ -5,14 +5,16 @@ import { TopicsView } from './views/TopicsView'
 import { SessionsView } from './views/SessionsView'
 import { MethodsView } from './views/MethodsView'
 import { TopicPanel } from './TopicPanel'
+import { RulesPanel } from './RulesPanel'
 import type { Subject } from '../types'
 
-type Tab = 'topics' | 'sessions' | 'methods'
+type Tab = 'topics' | 'sessions' | 'methods' | 'rules'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'topics', label: 'Topics' },
   { id: 'sessions', label: 'Sessions' },
   { id: 'methods', label: 'Methods' },
+  { id: 'rules', label: 'Rules' },
 ]
 
 interface Props {
@@ -69,7 +71,7 @@ export function SubjectShell({ subjects, onLogout }: Props) {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-12 pt-5 pb-10 min-h-0">
-        {topicsLoading || touchesLoading ? (
+        {(topicsLoading || touchesLoading) && activeTab !== 'rules' ? (
           <div className="flex items-center justify-center h-32 text-dim">Loading…</div>
         ) : (
           <>
@@ -86,6 +88,11 @@ export function SubjectShell({ subjects, onLogout }: Props) {
             )}
             {activeTab === 'methods' && (
               <MethodsView context={context} subjectName={activeSubject.name} />
+            )}
+            {activeTab === 'rules' && (
+              <div className="max-w-3xl">
+                <RulesPanel subjectId={activeSubject.id} title={`Rules for ${activeSubject.name.replace(/-/g, ' ')}`} />
+              </div>
             )}
           </>
         )}
