@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRules } from '../hooks/useRules'
+import { EmptyState, ErrorState } from './StateViews'
 import type { Rule } from '../types'
 
 interface Props {
@@ -24,7 +25,7 @@ function Switch({ active, onToggle, title }: { active: boolean; onToggle: () => 
 }
 
 export function RulesPanel({ subjectId, title }: Props) {
-  const { rules, loading, add, update, remove } = useRules(subjectId)
+  const { rules, loading, error, add, update, remove, reload } = useRules(subjectId)
   // null = modal closed; 'new' = create mode; a Rule = edit mode
   const [editing, setEditing] = useState<Rule | 'new' | null>(null)
 
@@ -47,10 +48,24 @@ export function RulesPanel({ subjectId, title }: Props) {
           : 'Applied to every subject, every session.'}
       </p>
 
-      {loading && rules.length === 0 ? (
+      {error ? (
+        <ErrorState message={error} onRetry={reload} />
+      ) : loading && rules.length === 0 ? (
         <div className="text-dim text-sm py-4">Loading…</div>
       ) : rules.length === 0 ? (
-        <div className="text-faint text-sm py-4">No rules yet.</div>
+        <EmptyState
+          icon="◈"
+          title="No rules yet"
+          message="Add a rule to steer how sessions run."
+          action={
+            <button
+              onClick={() => setEditing('new')}
+              className="rounded-lg bg-accent2 text-white text-sm font-medium px-4 py-2 hover:brightness-110 transition-all"
+            >
+              + Add rule
+            </button>
+          }
+        />
       ) : (
         <div className="flex flex-col gap-2">
           {rules.map(r => (
