@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS public.rules (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
   subject_id uuid REFERENCES public.subjects(id) ON DELETE CASCADE,  -- NULL = global
-  text       text NOT NULL,
+  label      text NOT NULL,                 -- short title shown in the list
+  text       text NOT NULL DEFAULT '',      -- description / instruction, editable in modal
   active     boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

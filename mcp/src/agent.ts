@@ -90,10 +90,11 @@ export class LearnMcp extends McpAgent<Env, unknown, Props> {
       if (fn === "manage_rules") {
         return (
           "Manage the user's custom teaching rules (one tool, four actions via p_action). " +
+          "A rule has a short p_label (title) and an optional p_text (description/instruction). " +
           "list — p_action:'list' with no scope returns { global:[...], subjects:{ id:[...] } }; " +
           "p_scope:'global' returns only global; p_subject_id:<id> returns that subject's rules. " +
-          "add — p_action:'add', p_text:<rule>, optional p_subject_id (omit for a global rule). " +
-          "update — p_action:'update', p_rule_id:<id>, and p_text and/or p_active. " +
+          "add — p_action:'add', p_label:<title>, optional p_text:<description>, optional p_subject_id (omit for a global rule). " +
+          "update — p_action:'update', p_rule_id:<id>, and any of p_label / p_text / p_active. " +
           "delete — p_action:'delete', p_rule_id:<id>. " +
           "Use 'list' (no scope) to answer 'which rules do I have?'."
         );

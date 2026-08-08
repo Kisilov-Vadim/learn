@@ -6,6 +6,7 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$
   SELECT jsonb_build_object(
     'id',        r.id,
     'subjectId', r.subject_id,
+    'label',     r.label,
     'text',      r.text,
     'active',    r.active,
     'createdAt', r.created_at,
@@ -19,7 +20,8 @@ CREATE OR REPLACE FUNCTION public.manage_rules(
   p_rule_id    uuid    DEFAULT NULL,
   p_subject_id uuid    DEFAULT NULL,
   p_scope      text    DEFAULT NULL,   -- 'global' | 'subject' | 'all' (list only)
-  p_text       text    DEFAULT NULL,
+  p_label      text    DEFAULT NULL,   -- short title (required on add)
+  p_text       text    DEFAULT NULL,   -- description / instruction (optional)
   p_active     boolean DEFAULT NULL
 ) RETURNS jsonb
 LANGUAGE plpgsql
@@ -72,16 +74,16 @@ BEGIN
     END IF;
 
   ELSIF p_action = 'add' THEN
-    IF p_text IS NULL OR length(btrim(p_text)) = 0 THEN
-      RAISE EXCEPTION 'p_text is required for add';
+    IF p_label IS NULL OR length(btrim(p_label)) = 0 THEN
+      RAISE EXCEPTION 'p_label is required for add';
     END IF;
     IF p_subject_id IS NOT NULL AND NOT EXISTS (
       SELECT 1 FROM public.subjects s WHERE s.id = p_subject_id AND s.user_id = v_uid
     ) THEN
       RAISE EXCEPTION 'subject not found or not owned by user';
     END IF;
-    INSERT INTO public.rules (user_id, subject_id, text, active)
-    VALUES (v_uid, p_subject_id, btrim(p_text), COALESCE(p_active, true))
+    INSERT INTO public.rules (user_id, subject_id, label, text, active)
+    VALUES (v_uid, p_subject_id, btrim(p_label), COALESCE(p_text, ''), COALESCE(p_active, true))
     RETURNING * INTO v_row;
     RETURN public._rule_json(v_row);
 
@@ -89,11 +91,12 @@ BEGIN
     IF p_rule_id IS NULL THEN
       RAISE EXCEPTION 'p_rule_id is required for update';
     END IF;
-    IF p_text IS NOT NULL AND length(btrim(p_text)) = 0 THEN
-      RAISE EXCEPTION 'p_text cannot be empty';
+    IF p_label IS NOT NULL AND length(btrim(p_label)) = 0 THEN
+      RAISE EXCEPTION 'p_label cannot be empty';
     END IF;
     UPDATE public.rules
-      SET text   = COALESCE(btrim(p_text), text),
+      SET label  = COALESCE(btrim(p_label), label),
+          text   = COALESCE(p_text, text),
           active = COALESCE(p_active, active)
       WHERE id = p_rule_id AND user_id = v_uid
       RETURNING * INTO v_row;
@@ -120,5 +123,5 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.manage_rules(text, uuid, uuid, text, text, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.manage_rules(text, uuid, uuid, text, text, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public._rule_json(public.rules) TO authenticated;

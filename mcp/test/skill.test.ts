@@ -21,14 +21,22 @@ describe("buildGuideText", () => {
     expect(out).toContain("No global rules set.");
   });
 
-  it("lists only active global rules as bullets", () => {
+  it("lists only active global rules as 'label: description' bullets", () => {
     const out = buildGuideText("GUIDE", [
-      { text: "Always give a real-world example", active: true },
-      { text: "Skip the Feynman close", active: false },
-      { text: "Push harder on tradeoffs", active: true },
+      { label: "Examples", text: "Always give a real-world example", active: true },
+      { label: "Feynman", text: "Skip the Feynman close", active: false },
+      { label: "Tradeoffs", text: "Push harder on tradeoffs", active: true },
     ]);
-    expect(out).toContain("- Always give a real-world example");
-    expect(out).toContain("- Push harder on tradeoffs");
-    expect(out).not.toContain("Skip the Feynman close");
+    expect(out).toContain("- Examples: Always give a real-world example");
+    expect(out).toContain("- Tradeoffs: Push harder on tradeoffs");
+    expect(out).not.toContain("Feynman");
+  });
+
+  it("renders the label alone when a rule has no description", () => {
+    const out = buildGuideText("GUIDE", [
+      { label: "Be blunt", text: "", active: true },
+    ]);
+    expect(out).toContain("- Be blunt");
+    expect(out).not.toContain("Be blunt:");
   });
 });
