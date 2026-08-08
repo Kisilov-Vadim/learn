@@ -44,7 +44,8 @@ New table `rules`:
 | id          | uuid PK       | `default gen_random_uuid()`                                  |
 | user_id     | uuid NOT NULL | `default auth.uid()`; references `auth.users`                |
 | subject_id  | uuid NULL     | references `subjects(id) on delete cascade`; NULL = global   |
-| text        | text NOT NULL | the instruction                                              |
+| label       | text NOT NULL | short title shown in the dashboard list; required on add     |
+| text        | text NOT NULL | `default ''`; the description/instruction, optional          |
 | active      | boolean       | `NOT NULL default true`; inactive rules are never injected   |
 | created_at  | timestamptz   | `default now()`                                              |
 | updated_at  | timestamptz   | `default now()`, bumped by trigger on update                 |
@@ -71,10 +72,14 @@ manage_rules(
   p_rule_id   uuid    default null,
   p_subject_id uuid   default null,
   p_scope     text    default null, -- 'global' | 'subject' | 'all' (list only)
-  p_text      text    default null,
+  p_label     text    default null, -- short title (required on add)
+  p_text      text    default null, -- description / instruction (optional)
   p_active    boolean default null
 ) returns jsonb
 ```
+
+A rule = `label` (short title) + `text` (optional description). `add` requires `p_label`;
+`update` patches any of `p_label` / `p_text` / `p_active`.
 
 Behavior:
 
@@ -103,15 +108,19 @@ verbatim.
   ```
   ## Your Personal Rules (global)
   These are standing instructions from the user. Honor them for the whole session.
-  - <rule text>
+  - <label>: <description>        (label alone when the description is empty)
   - ...
   ```
 
   If there are none, a one-line "No global rules set." note (keeps behavior explicit).
+  Only **active** rules are rendered — `buildGuideText` filters on `active` before building
+  the text, so inactive rules never reach the agent.
 
 - **Subject → `get_subject_context`** (Postgres RPC). Extend its returned JSON with a
-  `rules` array of that subject's **active** rules. Only subject rules here — global rules
-  are already delivered by `get_guide`.
+  `rules` array of that subject's **active** rules, each `{ id, label, text }` (no `active`
+  flag — it is always true there). The SQL filters `active = true`, so inactive subject rules
+  are never injected. Only subject rules here — global rules are already delivered by
+  `get_guide`.
 
 - **SKILL.md** documents both: where each set arrives, that the agent must obey them for the
   session, and how to manage them with `manage_rules` (including "which rules do I have?"

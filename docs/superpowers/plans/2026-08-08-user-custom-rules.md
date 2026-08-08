@@ -619,7 +619,8 @@ Append to `dashboard/src/types/index.ts`:
 export interface Rule {
   id: string
   subjectId: string | null
-  text: string
+  label: string       // short title shown in the list
+  text: string        // description / instruction, editable in the modal
   active: boolean
   createdAt: string
   updatedAt: string
@@ -651,19 +652,21 @@ export function useRules(subjectId: string | null) {
 
   useEffect(() => { load() }, [load])
 
-  const add = useCallback(async (text: string) => {
+  const add = useCallback(async (label: string, text: string) => {
     await rpc('manage_rules', {
       p_action: 'add',
+      p_label: label,
       p_text: text,
       ...(subjectId ? { p_subject_id: subjectId } : {}),
     })
     load()
   }, [subjectId, load])
 
-  const update = useCallback(async (id: string, patch: { text?: string; active?: boolean }) => {
+  const update = useCallback(async (id: string, patch: { label?: string; text?: string; active?: boolean }) => {
     await rpc('manage_rules', {
       p_action: 'update',
       p_rule_id: id,
+      ...(patch.label !== undefined ? { p_label: patch.label } : {}),
       ...(patch.text !== undefined ? { p_text: patch.text } : {}),
       ...(patch.active !== undefined ? { p_active: patch.active } : {}),
     })
@@ -702,7 +705,7 @@ git commit -m "feat(dashboard): Rule type + useRules hook"
 
 Create `dashboard/src/components/RulesPanel.tsx`:
 ```tsx
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRules } from '../hooks/useRules'
 import type { Rule } from '../types'
 
@@ -714,45 +717,27 @@ interface Props {
 
 export function RulesPanel({ subjectId, title }: Props) {
   const { rules, loading, add, update, remove } = useRules(subjectId)
-  const [draft, setDraft] = useState('')
+  // null = modal closed; 'new' = create mode; a Rule = edit mode
+  const [editing, setEditing] = useState<Rule | 'new' | null>(null)
 
   const heading = title ?? (subjectId ? 'Subject rules' : 'Global rules')
 
-  async function submitDraft() {
-    const text = draft.trim()
-    if (!text) return
-    setDraft('')
-    await add(text)
-  }
-
   return (
     <div className="bg-surface border border-border rounded-xl p-5">
-      <div className="flex items-baseline justify-between mb-1">
+      <div className="flex items-center justify-between mb-1">
         <h2 className="text-white font-semibold text-lg">{heading}</h2>
-        <span className="text-dim text-sm">{rules.length} rule{rules.length !== 1 ? 's' : ''}</span>
+        <button
+          onClick={() => setEditing('new')}
+          className="rounded-lg bg-accent2 text-white text-sm font-medium px-3.5 py-1.5 hover:brightness-110 transition-all"
+        >
+          + Add rule
+        </button>
       </div>
       <p className="text-dim text-sm mb-4">
         {subjectId
           ? 'Applied only when studying this subject.'
           : 'Applied to every subject, every session.'}
       </p>
-
-      <div className="flex gap-2 mb-4">
-        <input
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') submitDraft() }}
-          placeholder="Add a rule, e.g. “Always give a real-world code example”"
-          className="flex-1 bg-bg border border-border2 rounded-lg text-[15px] px-3.5 py-2.5 outline-none text-white placeholder:text-faint focus:border-accent transition-colors"
-        />
-        <button
-          onClick={submitDraft}
-          disabled={!draft.trim()}
-          className="rounded-lg bg-accent2 text-white text-sm font-medium px-4 py-2.5 disabled:opacity-40 hover:brightness-110 transition-all"
-        >
-          Add
-        </button>
-      </div>
 
       {loading && rules.length === 0 ? (
         <div className="text-dim text-sm py-4">Loading…</div>
@@ -761,72 +746,144 @@ export function RulesPanel({ subjectId, title }: Props) {
       ) : (
         <div className="flex flex-col gap-2">
           {rules.map(r => (
-            <RuleRow key={r.id} rule={r} onUpdate={update} onRemove={remove} />
+            <div
+              key={r.id}
+              className={`bg-bg rounded-lg px-3.5 py-2.5 flex items-center gap-3 ${r.active ? '' : 'opacity-50'}`}
+            >
+              <button
+                onClick={() => update(r.id, { active: !r.active })}
+                title={r.active ? 'Disable' : 'Enable'}
+                className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${r.active ? 'bg-accent2' : 'bg-border2'}`}
+              >
+                <span
+                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${r.active ? 'left-[18px]' : 'left-0.5'}`}
+                />
+              </button>
+              <button
+                onClick={() => setEditing(r)}
+                className="flex-1 text-left text-[14px] font-medium text-white hover:text-accent transition-colors truncate"
+              >
+                {r.label}
+              </button>
+            </div>
           ))}
         </div>
+      )}
+
+      {editing !== null && (
+        <RuleModal
+          rule={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onCreate={async (label, text) => { await add(label, text); setEditing(null) }}
+          onSave={async (id, text) => { await update(id, { text }); setEditing(null) }}
+          onDelete={async (id) => { await remove(id); setEditing(null) }}
+        />
       )}
     </div>
   )
 }
 
-function RuleRow({
+function RuleModal({
   rule,
-  onUpdate,
-  onRemove,
+  onClose,
+  onCreate,
+  onSave,
+  onDelete,
 }: {
-  rule: Rule
-  onUpdate: (id: string, patch: { text?: string; active?: boolean }) => Promise<void>
-  onRemove: (id: string) => Promise<void>
+  rule: Rule | null // null = create mode
+  onClose: () => void
+  onCreate: (label: string, text: string) => Promise<void>
+  onSave: (id: string, text: string) => Promise<void>
+  onDelete: (id: string) => Promise<void>
 }) {
-  const [editing, setEditing] = useState(false)
-  const [text, setText] = useState(rule.text)
+  const isNew = rule === null
+  const [label, setLabel] = useState(rule?.label ?? '')
+  const [text, setText] = useState(rule?.text ?? '')
+  const [busy, setBusy] = useState(false)
 
-  async function saveEdit() {
-    const next = text.trim()
-    setEditing(false)
-    if (next && next !== rule.text) await onUpdate(rule.id, { text: next })
-    else setText(rule.text)
+  // Close on Escape.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const canSave = isNew ? label.trim().length > 0 : true
+
+  async function save() {
+    if (busy || !canSave) return
+    setBusy(true)
+    try {
+      if (isNew) await onCreate(label.trim(), text)
+      else await onSave(rule!.id, text)
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
     <div
-      className={`bg-bg rounded-lg px-3.5 py-2.5 flex items-center gap-3 ${rule.active ? '' : 'opacity-50'}`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
     >
-      <button
-        onClick={() => onUpdate(rule.id, { active: !rule.active })}
-        title={rule.active ? 'Disable' : 'Enable'}
-        className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${rule.active ? 'bg-accent2' : 'bg-border2'}`}
+      <div
+        className="bg-surface border border-border2 rounded-2xl w-full max-w-lg p-6 relative"
+        onClick={e => e.stopPropagation()}
       >
-        <span
-          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${rule.active ? 'left-[18px]' : 'left-0.5'}`}
-        />
-      </button>
+        <button
+          onClick={onClose}
+          title="Close"
+          className="absolute top-4 right-4 text-dim hover:text-white transition-colors text-lg"
+        >
+          ✕
+        </button>
 
-      {editing ? (
-        <input
-          autoFocus
+        {isNew ? (
+          <input
+            autoFocus
+            value={label}
+            onChange={e => setLabel(e.target.value)}
+            placeholder="Rule label (e.g. “Examples”)"
+            className="w-full bg-bg border border-border2 rounded-lg text-lg font-semibold px-3.5 py-2.5 mb-4 outline-none text-white placeholder:text-faint focus:border-accent transition-colors"
+          />
+        ) : (
+          <h3 className="text-white font-semibold text-xl mb-4 pr-8">{rule!.label}</h3>
+        )}
+
+        <label className="block text-dim text-sm mb-1.5">Description</label>
+        <textarea
+          autoFocus={!isNew}
           value={text}
           onChange={e => setText(e.target.value)}
-          onBlur={saveEdit}
-          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setText(rule.text); setEditing(false) } }}
-          className="flex-1 bg-surface border border-accent rounded-md text-[14px] px-2.5 py-1.5 outline-none text-white"
+          rows={5}
+          placeholder="What should the assistant do? (optional)"
+          className="w-full bg-bg border border-border2 rounded-lg text-[15px] px-3.5 py-2.5 outline-none text-white placeholder:text-faint focus:border-accent transition-colors resize-y"
         />
-      ) : (
-        <span
-          onClick={() => setEditing(true)}
-          className="flex-1 text-[14px] text-white cursor-text"
-        >
-          {rule.text}
-        </span>
-      )}
 
-      <button
-        onClick={() => onRemove(rule.id)}
-        title="Delete"
-        className="shrink-0 text-dim hover:text-red-400 transition-colors text-sm px-1"
-      >
-        ✕
-      </button>
+        <div className="flex items-center gap-2 mt-5">
+          {!isNew && (
+            <button
+              onClick={() => onDelete(rule!.id)}
+              className="text-red-400 hover:text-red-300 text-sm mr-auto"
+            >
+              Delete
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className={`text-dim hover:text-white text-sm px-4 py-2 ${isNew ? 'ml-auto' : ''}`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={!canSave || busy}
+            className="rounded-lg bg-accent2 text-white text-sm font-medium px-4 py-2 disabled:opacity-40 hover:brightness-110 transition-all"
+          >
+            Save
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
