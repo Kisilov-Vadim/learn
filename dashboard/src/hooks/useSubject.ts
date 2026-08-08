@@ -1,29 +1,33 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { rpc } from '../lib/supabase'
 import type { Topic, Touch, SubjectContext } from '../types'
 
 export function useTopics(subjectId: string | null) {
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!subjectId) return
-    setLoading(true)
+  const load = useCallback(() => {
+    if (!subjectId) { setTopics([]); return }
+    setLoading(true); setError(null)
     rpc<{ topics: Topic[] }>('query_topics', { p_subject_id: subjectId, p_limit: 500 })
       .then(data => setTopics(data?.topics ?? []))
+      .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false))
   }, [subjectId])
 
-  return { topics, loading }
+  useEffect(() => { load() }, [load])
+  return { topics, loading, error, reload: load }
 }
 
 export function useTouches(subjectId: string | null) {
   const [touches, setTouches] = useState<Touch[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!subjectId) return
-    setLoading(true)
+  const load = useCallback(() => {
+    if (!subjectId) { setTouches([]); return }
+    setLoading(true); setError(null)
     rpc<{ touches: Touch[] }>('query_touches', {
       p_subject_id: subjectId,
       p_sort_field: 'createdAt',
@@ -31,38 +35,43 @@ export function useTouches(subjectId: string | null) {
       p_limit: 1000,
     })
       .then(data => setTouches(data?.touches ?? []))
+      .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false))
   }, [subjectId])
 
-  return { touches, loading }
+  useEffect(() => { load() }, [load])
+  return { touches, loading, error, reload: load }
 }
 
 export function useSubjectContext(subjectId: string | null) {
   const [context, setContext] = useState<SubjectContext | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!subjectId) return
-    setLoading(true)
+  const load = useCallback(() => {
+    if (!subjectId) { setContext(null); return }
+    setLoading(true); setError(null)
     rpc<SubjectContext>('get_subject_context', { p_subject_id: subjectId })
       .then(data => setContext(data))
+      .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false))
   }, [subjectId])
 
-  return { context, loading }
+  useEffect(() => { load() }, [load])
+  return { context, loading, error, reload: load }
 }
 
 export function useTopic(topicId: string | null) {
-  const [topic, setTopic] = useState<Topic & { history: Touch[] } | null>(null)
+  const [topic, setTopic] = useState<(Topic & { history: Touch[] }) | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!topicId) { setTopic(null); return }
-    setLoading(true)
-
+    setLoading(true); setError(null)
     rpc<Topic>('get_topic', { p_topic_id: topicId })
       .then(async topicData => {
-        if (!topicData) return
+        if (!topicData) { setTopic(null); return }
         // get_topic doesn't include history — fetch touches for this topic separately
         const touchData = await rpc<{ touches: Touch[] }>('query_touches', {
           p_subject_id: topicData.subjectId,
@@ -73,8 +82,10 @@ export function useTopic(topicId: string | null) {
         })
         setTopic({ ...topicData, history: touchData?.touches ?? [] })
       })
+      .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false))
   }, [topicId])
 
-  return { topic, loading }
+  useEffect(() => { load() }, [load])
+  return { topic, loading, error, reload: load }
 }

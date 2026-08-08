@@ -6,14 +6,16 @@ import type { Rule } from '../types'
 export function useRules(subjectId: string | null) {
   const [rules, setRules] = useState<Rule[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    setLoading(true)
+    setLoading(true); setError(null)
     const params = subjectId
       ? { p_action: 'list', p_subject_id: subjectId }
       : { p_action: 'list', p_scope: 'global' }
     rpc<{ global?: Rule[]; rules?: Rule[] }>('manage_rules', params)
       .then(data => setRules(subjectId ? (data?.rules ?? []) : (data?.global ?? [])))
+      .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false))
   }, [subjectId])
 
@@ -46,5 +48,5 @@ export function useRules(subjectId: string | null) {
     load()
   }, [load])
 
-  return { rules, loading, add, update, remove }
+  return { rules, loading, error, add, update, remove, reload: load }
 }
