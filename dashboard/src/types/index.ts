@@ -72,3 +72,13 @@ export interface SubjectContext {
   deepDiveCandidate: Topic | null
   methodEffectiveness: Record<string, MethodStat>
 }
+
+export interface Rule {
+  id: string
+  subjectId: string | null
+  label: string       // short title shown in the list
+  text: string        // description / instruction, editable in the modal
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
