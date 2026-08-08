@@ -116,6 +116,7 @@ function RuleModal({
   const [text, setText] = useState(rule?.text ?? '')
   const [active, setActive] = useState(rule?.active ?? true)
   const [busy, setBusy] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   // Close on Escape.
   useEffect(() => {
@@ -180,27 +181,48 @@ function RuleModal({
         </div>
 
         <div className="flex items-center gap-2 mt-5">
-          {!isNew && (
-            <button
-              onClick={() => onDelete(rule!.id)}
-              className="text-red-400 hover:text-red-300 text-sm mr-auto"
-            >
-              Delete
-            </button>
+          {confirmingDelete ? (
+            <>
+              <span className="text-sm text-muted mr-auto">Delete this rule?</span>
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                className="text-dim hover:text-white text-sm px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { if (!busy) { setBusy(true); onDelete(rule!.id) } }}
+                disabled={busy}
+                className="rounded-lg bg-red-500/90 text-white text-sm font-medium px-4 py-2 disabled:opacity-40 hover:bg-red-500 transition-colors"
+              >
+                Delete
+              </button>
+            </>
+          ) : (
+            <>
+              {!isNew && (
+                <button
+                  onClick={() => setConfirmingDelete(true)}
+                  className="text-red-400 hover:text-red-300 text-sm mr-auto"
+                >
+                  Delete
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className={`text-dim hover:text-white text-sm px-4 py-2 ${isNew ? 'ml-auto' : ''}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={save}
+                disabled={!canSave || busy}
+                className="rounded-lg bg-accent2 text-white text-sm font-medium px-4 py-2 disabled:opacity-40 hover:brightness-110 transition-all"
+              >
+                Save
+              </button>
+            </>
           )}
-          <button
-            onClick={onClose}
-            className={`text-dim hover:text-white text-sm px-4 py-2 ${isNew ? 'ml-auto' : ''}`}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={save}
-            disabled={!canSave || busy}
-            className="rounded-lg bg-accent2 text-white text-sm font-medium px-4 py-2 disabled:opacity-40 hover:brightness-110 transition-all"
-          >
-            Save
-          </button>
         </div>
       </div>
     </div>
