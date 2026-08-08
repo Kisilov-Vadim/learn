@@ -31,4 +31,23 @@ describe("buildToolHandlers", () => {
     await handlers["get_dashboard"]({});
     expect(seen[0]).toBeUndefined();
   });
+
+  it("registers a manage_rules handler that proxies params", async () => {
+    const calls: any[] = [];
+    const deps = {
+      getJwt: vi.fn(async () => "jwt-r"),
+      callRpc: vi.fn(async (_f: any, jwt: string, fn: string, params: any) => {
+        calls.push({ jwt, fn, params }); return { ok: true };
+      }),
+      fetchImpl: vi.fn(),
+    };
+    const handlers = buildToolHandlers(deps as any, "grant-r");
+    expect(Object.keys(handlers)).toContain("manage_rules");
+    await handlers["manage_rules"]({ p_action: "list", p_scope: "global" });
+    expect(calls[0]).toEqual({
+      jwt: "jwt-r",
+      fn: "manage_rules",
+      params: { p_action: "list", p_scope: "global" },
+    });
+  });
 });

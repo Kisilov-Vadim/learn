@@ -75,6 +75,17 @@ export class LearnMcp extends McpAgent<Env, unknown, Props> {
     // Per-function descriptions; the entry-point calls point back to get_guide so the
     // model loads the full instructions even when it starts from a bare "start learning".
     const describe = (fn: RpcFunction): string => {
+      if (fn === "manage_rules") {
+        return (
+          "Manage the user's custom teaching rules (one tool, four actions via p_action). " +
+          "list — p_action:'list' with no scope returns { global:[...], subjects:{ id:[...] } }; " +
+          "p_scope:'global' returns only global; p_subject_id:<id> returns that subject's rules. " +
+          "add — p_action:'add', p_text:<rule>, optional p_subject_id (omit for a global rule). " +
+          "update — p_action:'update', p_rule_id:<id>, and p_text and/or p_active. " +
+          "delete — p_action:'delete', p_rule_id:<id>. " +
+          "Use 'list' (no scope) to answer 'which rules do I have?'."
+        );
+      }
       const nudge =
         fn === "get_dashboard" || fn === "get_schema" || fn === "get_subject_context"
           ? " IMPORTANT: if you have not already, call `get_guide` first to load how to run the session."
