@@ -97,7 +97,7 @@ export function Header({ subjects, activeId, onSubjectChange, onHome, onRules, o
               >
                 Rules
               </button>
-              <div><InstallButton /></div>
+              <InstallButton triggerClassName="text-left text-white text-base py-2 hover:text-accent transition-colors" />
               <button
                 onClick={() => { setMenuOpen(false); onLogout() }}
                 className="text-left text-dim text-base py-2 hover:text-white transition-colors"

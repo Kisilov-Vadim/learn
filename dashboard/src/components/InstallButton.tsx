@@ -10,7 +10,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'code', label: 'Claude Code / other agents' },
 ]
 
-export function InstallButton() {
+export function InstallButton({ triggerClassName }: { triggerClassName?: string } = {}) {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('app')
 
@@ -27,7 +27,7 @@ export function InstallButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-sm font-medium px-3 py-1.5 rounded-md border border-border2 text-muted hover:text-white hover:border-accent transition-colors"
+        className={triggerClassName ?? "text-sm font-medium px-3 py-1.5 rounded-md border border-border2 text-muted hover:text-white hover:border-accent transition-colors"}
       >
         Connect
       </button>
