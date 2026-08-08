@@ -10,7 +10,7 @@ import { getMcpState } from './lib/mcpCallback'
 
 export default function App() {
   const { session, loading: authLoading, login, logout } = useAuth()
-  const { subjects, loaded: dashLoaded } = useDashboard(!!session)
+  const { subjects, loaded: dashLoaded, error, reload } = useDashboard(!!session)
   const navigate = useNavigate()
 
   if (authLoading) return <div className="min-h-screen bg-bg flex items-center justify-center text-dim">Loading…</div>
@@ -27,6 +27,8 @@ export default function App() {
         element={
           <SubjectCards
             subjects={subjects}
+            error={error}
+            onReload={reload}
             onSelect={id => navigate(`/s/${id}/topics`)}
             onLogout={logout}
           />
