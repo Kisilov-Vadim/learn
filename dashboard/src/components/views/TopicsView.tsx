@@ -106,7 +106,7 @@ export function TopicsView({ topics, onOpenTopic }: Props) {
             const pct = desiredSum > 0 ? (scoreSum / desiredSum) * 100 : 0
             const isOpen = openLevel === level
             const countColor = pct === 100 ? '#10b981' : pct > 0 ? '#eab308' : '#475569'
-            const barGrad = pct === 100 ? 'linear-gradient(90deg,#10b981,#06b6d4)' : 'linear-gradient(90deg,#eab308,#f97316)'
+            const barGrad = scoreGradient(Math.round(pct / 20))
 
             return (
               <div key={level}>
