@@ -101,7 +101,9 @@ export function TopicsView({ topics, onOpenTopic }: Props) {
             const levelTopics = topics.filter(t => t.level === level)
             if (levelTopics.length === 0) return null
             const mastered = levelTopics.filter(t => t.status === 'completed').length
-            const pct = (mastered / levelTopics.length) * 100
+            const scoreSum = levelTopics.reduce((s, t) => s + t.score, 0)
+            const desiredSum = levelTopics.reduce((s, t) => s + t.desiredScore, 0)
+            const pct = desiredSum > 0 ? (scoreSum / desiredSum) * 100 : 0
             const isOpen = openLevel === level
             const countColor = pct === 100 ? '#10b981' : pct > 0 ? '#eab308' : '#475569'
             const barGrad = pct === 100 ? 'linear-gradient(90deg,#10b981,#06b6d4)' : 'linear-gradient(90deg,#eab308,#f97316)'
