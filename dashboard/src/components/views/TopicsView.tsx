@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { scoreBorderColor, scoreGradient, formatDate, today, LEVEL_TAG } from '../../lib/utils'
+import { scoreBorderColor, scoreGradient, formatDate, today } from '../../lib/utils'
 import type { Topic, Level } from '../../types'
 
 const LEVELS: Level[] = ['beginner', 'junior', 'middle', 'senior', 'principal']
@@ -160,6 +160,11 @@ function TopicRow({ topic, todayStr, onClick }: { topic: Topic; todayStr: string
   const isCompleted = topic.status === 'completed'
   const color = scoreBorderColor(topic.score)
   const pct = (topic.score / topic.desiredScore) * 100
+  const dueStr = isCompleted
+    ? 'completed'
+    : topic.nextReview
+    ? (topic.nextReview <= todayStr ? `${formatDate(topic.nextReview)} ⚡` : formatDate(topic.nextReview))
+    : 'not started'
 
   return (
     <div
@@ -174,8 +179,7 @@ function TopicRow({ topic, todayStr, onClick }: { topic: Topic; todayStr: string
           {!isCompleted && isDue && <span className="bg-[#431407] text-orange-400 text-[11px] font-semibold px-1.5 py-0.5 rounded">due</span>}
           {notStarted
             ? <span className="text-[13px] text-faint">not started</span>
-            : <span className="text-[13px] font-semibold" style={{ color }}>{topic.score}/{topic.desiredScore}</span>}
-          <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${LEVEL_TAG[topic.level]}`}>{topic.level}</span>
+            : <span className="text-[13px] font-semibold" style={{ color }}>{topic.score}/{topic.desiredScore} · {dueStr}</span>}
         </div>
       </div>
       {!notStarted && (
