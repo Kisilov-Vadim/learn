@@ -18,6 +18,7 @@ export interface Topic {
   id: string
   subjectId: string
   name: string
+  description?: string | null  // only returned by get_topic, not query_topics
   level: Level
   score: number
   status: Status

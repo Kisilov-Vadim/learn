@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTopic } from '../hooks/useSubject'
+import { Markdown } from './Markdown'
 import { scoreBorderColor, scoreGradient, formatDate, formatDateTime, formatMethod, capitalize, today } from '../lib/utils'
 
 interface Props {
@@ -39,6 +40,13 @@ export function TopicPanel({ topicId, onClose }: Props) {
                 </div>
 
                 <div className="px-[18px] py-4 flex-1">
+                  {/* Description */}
+                  {topic.description && (
+                    <div className="bg-bg rounded-lg px-4 py-3 mb-4 text-[14px] text-[#cbd5e1] leading-relaxed">
+                      <Markdown text={topic.description} />
+                    </div>
+                  )}
+
                   {/* Stats row */}
                   <div className="flex gap-2 mb-4">
                     {[
@@ -112,7 +120,7 @@ export function TopicPanel({ topicId, onClose }: Props) {
                     <>
                       <div className="text-xs font-semibold tracking-widest text-muted uppercase mb-3">Resources</div>
                       {topic.resources.map((r, i) => {
-                        const icon = ({ video: '▶', article: '📄', opensource: '⭐', course: '🎓', feed: '📡' } as Record<string, string>)[r.type] ?? '📄'
+                        const icon = ({ video: '▶', article: '📄', opensource: '⭐', repo: '⭐', course: '🎓', feed: '📡', docs: '📘', spec: '📘', paper: '📑', pdf: '📑', tool: '🛠' } as Record<string, string>)[r.type] ?? '📄'
                         const content = `${icon} ${r.title}${r.section ? ` — ${r.section}` : ''}`
                         return r.url
                           ? <a key={i} href={r.url} target="_blank" rel="noopener" className="block bg-bg rounded-md px-3 py-2 text-[13px] text-dim mb-1 hover:text-accent hover:bg-[#1e1630] transition-colors">{content}</a>

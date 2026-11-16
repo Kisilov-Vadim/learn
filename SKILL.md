@@ -79,7 +79,7 @@ Once the decision tree picks a topic, don't jump straight to a method. `get_subj
 
 Call tool `get_topic` with `params: { "p_topic_id": "<id>" }`.
 
-This returns the topic's `resources` (see Resources below) and a `touches` array — its last several touches, each with `method`, `scoreBefore`/`scoreAfter`, `effectiveness`, `agentComment`, and `createdAt`. The `agentComment` is the real signal, not just the score: a score can tick up while the comment still says "doesn't grasp the eviction mechanism at all," or a method that looks fine in the subject-wide `methodEffectiveness` aggregate might have flopped specifically on this topic. Skip this history check only for a topic's first-ever touch (`touches` empty) — there's nothing to read yet.
+This returns the topic's `description` (what the topic covers — use it to scope your questions), its `resources` (see Resources below) and a `touches` array — its last several touches, each with `method`, `scoreBefore`/`scoreAfter`, `effectiveness`, `agentComment`, and `createdAt`. The `agentComment` is the real signal, not just the score: a score can tick up while the comment still says "doesn't grasp the eviction mechanism at all," or a method that looks fine in the subject-wide `methodEffectiveness` aggregate might have flopped specifically on this topic. Skip this history check only for a topic's first-ever touch (`touches` empty) — there's nothing to read yet.
 
 Use what you find to decide how to open:
 - **Comments point to near-zero grasp of the fundamentals** (repeated blanks, or a note that a prerequisite concept is missing) → don't open with Socratic questioning cold. Point to a resource first (see Resources below), let them read, then continue.
@@ -243,10 +243,11 @@ Create the subject: call tool `create_subject` with
 
 Add each topic in curriculum order (one `add_topic` call per topic).
 `p_desired_score` is optional — omit to default to 5. Call tool `add_topic` with
-`params: { "p_subject_id": "<id>", "p_name": "<topic>", "p_level": "<level>", "p_prerequisites": [], "p_resources": [{ "url": "<url>", "type": "article", "title": "<title>" }] }`.
+`params: { "p_subject_id": "<id>", "p_name": "<topic>", "p_level": "<level>", "p_prerequisites": [], "p_resources": [{ "url": "<url>", "type": "article", "title": "<title>" }], "p_description": "<what this topic is about>" }`.
 
 Rules for curriculum generation:
 - Order by dependency within each level (prerequisites before dependents)
+- Always write a `p_description` (roadmap.sh style): 2–6 plain sentences on what the topic is, what problem it solves, and what the learner should be able to do after it. Markdown allowed (`- ` lists, `**bold**`, `` `code` ``, `[links](https://…)`). It is shown in the dashboard topic panel. To fix or add one later: `update_topic` with `p_patch: { "description": "<text>" }` (`""` clears it).
 - Research and fill in 1–3 real resources per topic before calling `add_topic` — use WebSearch if you're not already confident of a good source. Don't default to an empty `p_resources` list. Dense topics (Senior/Principal level, or ones that hinge on real-world intuition) need this most, but every topic benefits from at least one solid reference to fall back on when a user stalls on it later.
 - Topics the user scored 4+ in diagnostic → call `update_topic` immediately to set score and status: `completed`
 
